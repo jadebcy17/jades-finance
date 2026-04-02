@@ -1578,13 +1578,16 @@ function saveBudget(){
   // Store the limit + whether it is weekly
   // Weekly budget stored as-is; monthly budget stored as-is
   // getLim() converts as needed
-  const existing = D.budgets.find(b=>b.cat===cat);
-  if(existing){
-    existing.limit = amount;
-    existing.currency = cur;
-    existing.weekly = isWeekly;
+  // If editing an existing budget by ID, update it
+  const editId = window._editingBudgetId;
+  if(editId){
+    const target = D.budgets.find(b=>b.id===editId);
+    if(target){ target.cat=cat; target.limit=amount; target.currency=cur; target.weekly=!!isWeekly; }
+    window._editingBudgetId = null;
   } else {
-    D.budgets.push({id:uid(), cat, limit:amount, currency:cur, weekly:!!isWeekly});
+    const existing = D.budgets.find(b=>b.cat===cat);
+    if(existing){ existing.limit=amount; existing.currency=cur; existing.weekly=!!isWeekly; }
+    else { D.budgets.push({id:uid(), cat, limit:amount, currency:cur, weekly:!!isWeekly}); }
   }
   closeModal('budget');
   saveData();
@@ -1592,7 +1595,38 @@ function saveBudget(){
   toast('Budget sauvegarde');
 }
 
-function delBudget(id){D.budgets=D.budgets.filter(b=>b.id!==id);saveData();renderAll();}
+function delBudget(id){
+  if(!confirm('Supprimer ce budget ?')) return;
+  D.budgets=D.budgets.filter(b=>b.id!==id);
+  saveData();renderAll();
+}
+
+function editBudget(id){
+  const b = D.budgets.find(x=>x.id===id);
+  if(!b) return;
+  // Open modal pre-filled
+  const sel = document.getElementById('f-bud-cat');
+  if(sel){
+    sel.innerHTML = getCatOptions();
+    sel.value = b.cat;
+  }
+  const amtEl = document.getElementById('f-bud-amount');
+  if(amtEl) amtEl.value = b.limit;
+  const curEl = document.getElementById('f-bud-cur');
+  if(curEl) curEl.value = b.currency || 'AUD';
+  // Set weekly/monthly toggle
+  const type = b.weekly ? 'weekly' : 'monthly';
+  setBudType(type);
+  updateBudEquivNote();
+  // Add oninput listener
+  if(amtEl) amtEl.oninput = updateBudEquivNote;
+  // Store editing id
+  window._editingBudgetId = id;
+  // Change modal title
+  const title = document.querySelector('#modal-budget .modal-title');
+  if(title) title.textContent = 'Modifier le budget';
+  openModal('budget');
+}
 
 // ── TRADE STATE ──
 let _tradeAction='buy';
@@ -3115,9 +3149,12 @@ function openBudgetModal(){
   document.getElementById('f-bud-amount').value = '';
   document.getElementById('bud-equiv-note').textContent = '';
   setBudType('weekly');
-  // Add live preview listener
+  window._editingBudgetId = null;
+  const title = document.querySelector('#modal-budget .modal-title');
+  if(title) title.textContent = 'Budget par categorie';
   const inp = document.getElementById('f-bud-amount');
-  if(inp) inp.oninput = updateBudEquivNote;
+  if(inp){ inp.value=''; inp.oninput = updateBudEquivNote; }
+  document.getElementById('bud-equiv-note').textContent = '';
   openModal('budget');
 }
 
@@ -3745,7 +3782,8 @@ function renderBudget(){
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:16px">${b.cat.split(' ')[0]}</span>
           <span style="font-weight:600">${b.cat.split(' ').slice(1).join(' ')||b.cat}</span>
-          <button style="background:none;border:none;color:var(--red);cursor:pointer;opacity:.4;font-size:13px" onclick="delBudget('${b.id}')">&#10005;</button>
+          <button onclick="editBudget('${b.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:5px;transition:color .15s" onmouseover="this.style.color='var(--cd)'" onmouseout="this.style.color='var(--muted)'" title="Modifier">&#9998;</button>
+          <button style="background:none;border:none;color:var(--red);cursor:pointer;opacity:.4;font-size:13px" onclick="delBudget('${b.id}')" title="Supprimer">&#10005;</button>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:12px;color:var(--muted)">${fmtV(sp)} / ${fmtV(lim)}</span>
