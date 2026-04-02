@@ -464,7 +464,7 @@ button,input,select,textarea{font-family:'DM Sans',sans-serif}
         <button class="filter-chip active" id="bud-mode-month" onclick="setBudMode('month',this)" style="padding:5px 14px;font-size:12px">Mensuel</button>
         <button class="filter-chip" id="bud-mode-week" onclick="setBudMode('week',this)" style="padding:5px 14px;font-size:12px">Hebdomadaire</button>
       </div>
-      <button class="btn btn-primary" onclick="openModal('budget')">+ Ajouter</button>
+      <button class="btn btn-primary" onclick="openBudgetModal()">+ Ajouter</button>
     </div>
   </div>
 
@@ -1056,10 +1056,36 @@ button,input,select,textarea{font-family:'DM Sans',sans-serif}
 </div>
 <div class="modal-overlay" id="modal-budget">
   <div class="modal">
-    <div class="modal-title">Set Category Budget</div>
-    <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="f-bud-cat"><option>&#128722; Groceries</option><option>&#127968; Rent / Mortgage</option><option>&#128663; Transport</option><option>&#127869;&#65039; Dining Out</option><option>&#128161; Utilities</option><option>&#127917; Entertainment</option><option>&#128241; Subscriptions</option><option>&#9992;&#65039; Travel</option><option>&#128138; Health</option><option>&#128247; Clothing</option><option>&#129534; Tax</option></select></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">Monthly Limit</label><input class="form-input" type="number" step="1" id="f-bud-amount" placeholder="0.00"></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" id="f-bud-cur"><option value="AUD">AUD</option><option value="EUR">EUR</option></select></div></div>
-    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('budget')">Cancel</button><button class="btn btn-primary" onclick="saveBudget()">Save Budget</button></div>
+    <div class="modal-title">Budget par categorie</div>
+    <div class="form-group">
+      <label class="form-label">Categorie</label>
+      <select class="form-select" id="f-bud-cat"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type de budget</label>
+      <div style="display:flex;background:var(--surface2);border-radius:9px;padding:3px;gap:2px">
+        <button type="button" class="filter-chip active" id="bud-type-weekly" onclick="setBudType('weekly')" style="flex:1;padding:7px;font-size:13px">&#128197; Hebdomadaire</button>
+        <button type="button" class="filter-chip" id="bud-type-monthly" onclick="setBudType('monthly')" style="flex:1;padding:7px;font-size:13px">&#128198; Mensuel</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" id="f-bud-amount-label">Limite par semaine</label>
+        <input class="form-input" type="number" step="1" id="f-bud-amount" placeholder="ex: 150">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Devise</label>
+        <select class="form-select" id="f-bud-cur">
+          <option value="AUD">AUD</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+    </div>
+    <div id="bud-equiv-note" style="font-size:12.5px;color:var(--muted);padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:4px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('budget')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveBudget()">Sauvegarder</button>
+    </div>
   </div>
 </div>
 <div class="modal-overlay" id="modal-investment">
@@ -1544,14 +1570,28 @@ function txnRow(t,showDel){
 
 // ── BUDGET ──
 function saveBudget(){
-  const limit=parseFloat(document.getElementById('f-bud-amount').value)||0;
-  if(!limit){toast('Enter a limit','error');return;}
-  const cat=document.getElementById('f-bud-cat').value,cur=document.getElementById('f-bud-cur').value;
-  const ex=D.budgets.find(b=>b.cat===cat);
-  if(ex){ex.limit=limit;ex.currency=cur;}else D.budgets.push({id:uid(),cat,limit,currency:cur});
-  document.getElementById('f-bud-amount').value='';
-  closeModal('budget');saveData();renderAll();toast('Budget saved');
+  const cat = document.getElementById('f-bud-cat').value;
+  const amount = parseFloat(document.getElementById('f-bud-amount').value)||0;
+  const cur = document.getElementById('f-bud-cur').value;
+  const isWeekly = document.getElementById('bud-type-weekly')?.classList.contains('active');
+  if(!cat||!amount){toast('Entre une categorie et un montant','error');return;}
+  // Store the limit + whether it is weekly
+  // Weekly budget stored as-is; monthly budget stored as-is
+  // getLim() converts as needed
+  const existing = D.budgets.find(b=>b.cat===cat);
+  if(existing){
+    existing.limit = amount;
+    existing.currency = cur;
+    existing.weekly = isWeekly;
+  } else {
+    D.budgets.push({id:uid(), cat, limit:amount, currency:cur, weekly:!!isWeekly});
+  }
+  closeModal('budget');
+  saveData();
+  renderAll();
+  toast('Budget sauvegarde');
 }
+
 function delBudget(id){D.budgets=D.budgets.filter(b=>b.id!==id);saveData();renderAll();}
 
 // ── TRADE STATE ──
@@ -3040,6 +3080,47 @@ function saveBulkPrices(){
   if(note) note.textContent = updated + ' prix mis a jour a ' + new Date().toLocaleTimeString('fr-AU',{hour:'2-digit',minute:'2-digit'});
 }
 
+
+// ── BUDGET MODAL HELPERS ──
+var _budModalType = 'weekly';
+
+function setBudType(type){
+  _budModalType = type;
+  document.querySelectorAll('#bud-type-weekly,#bud-type-monthly').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('bud-type-'+type);
+  if(btn) btn.classList.add('active');
+  const lbl = document.getElementById('f-bud-amount-label');
+  if(lbl) lbl.textContent = type==='weekly' ? 'Limite par semaine' : 'Limite par mois';
+  updateBudEquivNote();
+}
+
+function updateBudEquivNote(){
+  const amt = parseFloat(document.getElementById('f-bud-amount')?.value)||0;
+  const note = document.getElementById('bud-equiv-note');
+  if(!note||!amt) return;
+  const cur = document.getElementById('f-bud-cur')?.value||'AUD';
+  const sym = cur==='EUR'?'€':'A$';
+  if(_budModalType==='weekly'){
+    note.textContent = 'Equivalent mensuel: '+sym+Math.round(amt*4.33)+'/mois';
+  } else {
+    note.textContent = 'Equivalent hebdomadaire: '+sym+Math.round(amt/4.33)+'/semaine';
+  }
+}
+
+function openBudgetModal(){
+  // Populate category dropdown with custom cats
+  const sel = document.getElementById('f-bud-cat');
+  if(sel) sel.innerHTML = getCatOptions();
+  // Reset
+  document.getElementById('f-bud-amount').value = '';
+  document.getElementById('bud-equiv-note').textContent = '';
+  setBudType('weekly');
+  // Add live preview listener
+  const inp = document.getElementById('f-bud-amount');
+  if(inp) inp.oninput = updateBudEquivNote;
+  openModal('budget');
+}
+
 function renderAll(){
   renderDashboard();renderIncome();renderExpenses();renderBudget();renderInvestments();renderTax();renderAnalytics();
   refreshCategoryDropdowns();
@@ -3526,8 +3607,13 @@ function renderBudget(){
   const weeklyFactor = 7 / 30.44;
   const bs = budSpentFromTxns(periodTxns);
   const getLim = b => {
-    const monthly = conv(b.limit, b.currency, D.cur);
-    return isWeek ? monthly * weeklyFactor : monthly;
+    // b.weekly: limit is per week; else limit is per month
+    const stored = conv(b.limit, b.currency, D.cur);
+    if(isWeek){
+      return b.weekly ? stored : stored * weeklyFactor;
+    } else {
+      return b.weekly ? stored * (30.44/7) : stored;
+    }
   };
 
   const totalBud = D.budgets.reduce((s,b)=>s+getLim(b), 0);
@@ -3667,7 +3753,11 @@ function renderBudget(){
         </div>
       </div>
       <div class="bud-track"><div class="bud-fill" style="width:${pct}%;background:${over?'var(--red)':PAL[i%PAL.length]}"></div></div>
-      ${isWeek?`<div style="font-size:11px;color:var(--muted);margin-top:3px">${fmtV(sp)} / ${fmtV(lim)} cette semaine &bull; Mensuel: ${fmtM(b.limit,b.currency)}</div>`:''}
+      <div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px">
+        <span class="badge ${b.weekly?'badge-b':'badge-muted'}" style="font-size:10px">${b.weekly?'&#128197; Hebdo':'&#128198; Mensuel'}</span>
+        ${fmtM(b.limit,b.currency)}${b.weekly?'/sem.':'/mois'}
+        ${isWeek?'<span style="color:var(--muted)">&bull; Cette semaine: '+fmtV(sp)+'</span>':''}
+      </div>
     </div>`;
   }).join('');
 
