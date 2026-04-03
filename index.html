@@ -252,6 +252,7 @@ button,input,select,textarea{font-family:'DM Sans',sans-serif}
     <button class="nav-btn" onclick="goPage('networth',this)"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>Net Worth</button>
     <div class="nav-label">Settings</div>
     <button class="nav-btn" onclick="goPage('admin',this)"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Admin</button>
+    <button class="nav-btn" onclick="goPage('converter',this)"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7h12M8 7l4-4M8 7l4 4M16 17H4M16 17l-4-4M16 17l-4 4"/></svg>Convertisseur</button>
     <div class="nav-label">Records</div>
     <button class="nav-btn" onclick="goPage('tax',this)"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Tax Return</button>
     <button class="nav-btn" onclick="goPage('analytics',this)"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</button>
@@ -1034,6 +1035,84 @@ button,input,select,textarea{font-family:'DM Sans',sans-serif}
     <div id="sim-table" style="overflow-x:auto;max-height:380px;overflow-y:auto"></div>
   </div>
 </div>
+<!-- CONVERTER PAGE -->
+<div id="page-converter" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Convertisseur</div><div class="page-sub">Taux en temps reel</div></div>
+    <button class="btn btn-ghost" onclick="refreshFX()" id="fx-refresh-btn">&#8635; Actualiser les taux</button>
+  </div>
+
+  <!-- Rate strip -->
+  <div id="conv-rate-strip" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px"></div>
+
+  <!-- Main converter card -->
+  <div class="card mb16">
+    <div class="section-head"><div class="section-title">Conversion instantanee</div></div>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <!-- FROM -->
+      <div style="flex:1;min-width:160px">
+        <label class="form-label">Montant</label>
+        <input class="form-input" type="number" id="conv-amount" value="1000" oninput="calcConv()" style="font-size:20px;font-weight:600;padding:14px 16px">
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <label class="form-label" style="text-align:center">De</label>
+        <select class="form-select" id="conv-from" onchange="calcConv()" style="font-size:15px;padding:10px 14px">
+          <option value="AUD">&#127462;&#127482; AUD</option>
+          <option value="EUR">&#127466;&#127482; EUR</option>
+          <option value="USD">&#127482;&#127480; USD</option>
+        </select>
+      </div>
+
+      <button onclick="swapConv()" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;width:44px;height:44px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-top:20px" onmouseover="this.style.background='var(--cd-pale)'" onmouseout="this.style.background='var(--surface2)'">&#8646;</button>
+
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <label class="form-label" style="text-align:center">Vers</label>
+        <select class="form-select" id="conv-to" onchange="calcConv()" style="font-size:15px;padding:10px 14px">
+          <option value="EUR">&#127466;&#127482; EUR</option>
+          <option value="AUD">&#127462;&#127482; AUD</option>
+          <option value="USD">&#127482;&#127480; USD</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div id="conv-result" style="margin-top:24px;padding:20px;background:linear-gradient(135deg,var(--cd-pale),#e8f5ee);border-radius:14px;border:1.5px solid var(--cd-glow)">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px">Resultat</div>
+      <div id="conv-result-main" style="font-family:Lora,serif;font-size:40px;font-weight:500;color:var(--cd)">...</div>
+      <div id="conv-result-rate" style="font-size:13px;color:var(--muted);margin-top:6px"></div>
+      <div id="conv-result-inverse" style="font-size:12.5px;color:var(--muted);margin-top:4px"></div>
+    </div>
+
+    <!-- Quick amounts -->
+    <div style="margin-top:16px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:10px">Montants rapides</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="conv-quick-btns"></div>
+    </div>
+  </div>
+
+  <!-- Historical rates chart -->
+  <div class="card mb16">
+    <div class="section-head">
+      <div class="section-title">Taux historique <span id="conv-chart-pair">AUD/EUR</span></div>
+      <div style="display:flex;gap:6px">
+        <button class="filter-chip active" id="conv-ch-7" onclick="loadFXHistory(7,this)" style="padding:4px 12px;font-size:11px">7j</button>
+        <button class="filter-chip" id="conv-ch-30" onclick="loadFXHistory(30,this)" style="padding:4px 12px;font-size:11px">30j</button>
+        <button class="filter-chip" id="conv-ch-90" onclick="loadFXHistory(90,this)" style="padding:4px 12px;font-size:11px">90j</button>
+      </div>
+    </div>
+    <div style="position:relative;height:220px"><canvas id="conv-fx-chart"></canvas><div id="conv-fx-empty" class="chart-empty">Chargement...</div></div>
+    <div id="conv-fx-stats" style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:12.5px"></div>
+  </div>
+
+  <!-- My portfolio in both currencies -->
+  <div class="card">
+    <div class="section-head"><div class="section-title">Mon portfolio converti</div></div>
+    <div id="conv-portfolio" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
+  </div>
+</div>
+
 </main></div>
 <!-- MODALS -->
 <div class="modal-overlay" id="modal-txn">
@@ -1438,6 +1517,7 @@ function goPage(id,btn){
   if(id==='networth')renderNetWorth();
   else if(id==='simulation'){setTimeout(function(){loadRealData();},50);}
   else if(id==='savings')renderSavings();
+  else if(id==='converter'){renderConverter();setTimeout(()=>loadFXHistory(7,document.getElementById('conv-ch-7')),100);}
   else if(id==='analytics')renderAnalytics();
   else if(id==='admin'){renderAdmin();refreshCategoryDropdowns();setTimeout(checkConnectivity,100);}
   else{
@@ -1951,7 +2031,7 @@ async function refreshPrices(){
 
 
 function showPriceDebug(){
-  const log=window._priceDebugLog||['Aucun log disponible'];
+  const log=window._priceLog||['Aucun log disponible'];
   const html2='<div style="font-family:monospace;font-size:11px;line-height:1.8;white-space:pre-wrap;max-height:60vh;overflow-y:auto;background:#111;color:#0f0;padding:14px;border-radius:8px">'+log.map(l=>{const c=l.startsWith('✓')?'#4ade80':l.startsWith('✗')||l.startsWith('FAIL')?'#f87171':'#93c5fd';return`<span style="color:${c}">${l}</span>`;}).join('\n')+'</div>';
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;align-items:center;justify-content:center';
@@ -1996,7 +2076,7 @@ function confirmHistoricalDate(){
   const d=el.value;
   const status=document.getElementById('hist-status');
   if(status) status.innerHTML='<span style="color:var(--blue)">Chargement de '+d+'...</span>';
-  closeModal('historical');
+  closeModal('datepicker');
   loadHistoricalPrices(d);
 }
 
@@ -3156,6 +3236,227 @@ function openBudgetModal(){
   if(inp){ inp.value=''; inp.oninput = updateBudEquivNote; }
   document.getElementById('bud-equiv-note').textContent = '';
   openModal('budget');
+}
+
+
+// ═══════════════════════════════════
+//  CONVERTER PAGE
+// ═══════════════════════════════════
+
+function renderConverter(){
+  // Rate strip
+  const rates = [
+    {from:'AUD',to:'EUR',label:'AUD \u2192 EUR'},
+    {from:'EUR',to:'AUD',label:'EUR \u2192 AUD'},
+    {from:'AUD',to:'USD',label:'AUD \u2192 USD'},
+  ];
+  const strip = document.getElementById('conv-rate-strip');
+  if(strip) strip.innerHTML = rates.map(r=>{
+    const rate = conv(1, r.from, r.to);
+    const ts = D.fx.lastUpdated ? new Date(D.fx.lastUpdated).toLocaleTimeString('fr-AU',{hour:'2-digit',minute:'2-digit'}) : '--';
+    return `<div class="card" style="text-align:center;cursor:pointer" onclick="setConvPair('${r.from}','${r.to}');calcConv()">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px">${r.label}</div>
+      <div style="font-family:Lora,serif;font-size:28px;font-weight:500;color:var(--cd)">${rate.toFixed(4)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Mis a jour ${ts}</div>
+    </div>`;
+  }).join('');
+
+  // Quick amounts
+  const quickEl = document.getElementById('conv-quick-btns');
+  if(quickEl) quickEl.innerHTML = [100,250,500,1000,2500,5000,10000].map(v=>
+    `<button class="btn btn-ghost" style="padding:6px 14px;font-size:13px" onclick="document.getElementById('conv-amount').value=${v};calcConv()">${v.toLocaleString('fr-FR')}</button>`
+  ).join('');
+
+  calcConv();
+
+  // Portfolio in all currencies
+  const pv = portVal(); // in D.cur (AUD)
+  const pvEUR = conv(pv, 'AUD', 'EUR');
+  const pvUSD = conv(pv, 'AUD', 'USD');
+  const portEl = document.getElementById('conv-portfolio');
+  if(portEl) portEl.innerHTML = [
+    {label:'Valeur en AUD', val:'A$'+Math.round(pv).toLocaleString('fr-FR'), sub:'Devise de base', color:'var(--cd)'},
+    {label:'Valeur en EUR', val:'\u20ac'+Math.round(pvEUR).toLocaleString('fr-FR'), sub:'Taux: '+conv(1,'AUD','EUR').toFixed(4), color:'var(--blue)'},
+    {label:'Valeur en USD', val:'$'+Math.round(pvUSD).toLocaleString('fr-FR'), sub:'Taux: '+conv(1,'AUD','USD').toFixed(4), color:'var(--gold)'},
+  ].map(c=>`<div class="card" style="text-align:center">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px">${c.label}</div>
+    <div style="font-family:Lora,serif;font-size:26px;font-weight:500;color:${c.color}">${c.val}</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:4px">${c.sub}</div>
+  </div>`).join('');
+}
+
+function setConvPair(from, to){
+  const fromEl = document.getElementById('conv-from');
+  const toEl   = document.getElementById('conv-to');
+  if(fromEl) fromEl.value = from;
+  if(toEl)   toEl.value   = to;
+}
+
+function swapConv(){
+  const fromEl = document.getElementById('conv-from');
+  const toEl   = document.getElementById('conv-to');
+  if(!fromEl||!toEl) return;
+  const tmp = fromEl.value;
+  fromEl.value = toEl.value;
+  toEl.value = tmp;
+  calcConv();
+}
+
+function calcConv(){
+  const amt    = parseFloat(document.getElementById('conv-amount')?.value) || 0;
+  const from   = document.getElementById('conv-from')?.value || 'AUD';
+  const to     = document.getElementById('conv-to')?.value   || 'EUR';
+  const rate   = conv(1, from, to);
+  const result = amt * rate;
+  const inverse= conv(1, to, from);
+
+  const symMap = {AUD:'A$', EUR:'\u20ac', USD:'US$'};
+  const sf = symMap[from]||'';
+  const st = symMap[to]  ||'';
+
+  const resEl = document.getElementById('conv-result-main');
+  const rateEl= document.getElementById('conv-result-rate');
+  const invEl = document.getElementById('conv-result-inverse');
+  if(resEl) resEl.textContent = st + result.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(rateEl) rateEl.textContent = '1 '+from+' = '+rate.toFixed(6)+' '+to;
+  if(invEl)  invEl.textContent  = '1 '+to+' = '+inverse.toFixed(6)+' '+from;
+
+  // Update chart pair label
+  const pairEl = document.getElementById('conv-chart-pair');
+  if(pairEl) pairEl.textContent = from+'/'+to;
+}
+
+async function loadFXHistory(days, btn){
+  document.querySelectorAll('#conv-ch-7,#conv-ch-30,#conv-ch-90').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+
+  const from = document.getElementById('conv-from')?.value || 'AUD';
+  const to   = document.getElementById('conv-to')?.value   || 'EUR';
+  const emptyEl = document.getElementById('conv-fx-empty');
+  const statsEl = document.getElementById('conv-fx-stats');
+  if(emptyEl){ emptyEl.style.display='flex'; emptyEl.textContent='Chargement...'; }
+  dc('conv-fx-chart');
+
+  try{
+    const endDate   = new Date().toISOString().split('T')[0];
+    const startDate = new Date(Date.now()-days*86400000).toISOString().split('T')[0];
+    const url = `https://api.frankfurter.app/${startDate}..${endDate}?from=${from}&to=${to}`;
+    const r   = await fetch(url);
+    const d   = await r.json();
+
+    if(!d.rates) throw new Error('no data');
+    const dates  = Object.keys(d.rates).sort();
+    const values = dates.map(date=>d.rates[date][to]);
+
+    if(!values.length) throw new Error('empty');
+
+    const min   = Math.min(...values);
+    const max   = Math.max(...values);
+    const avg   = values.reduce((s,v)=>s+v,0)/values.length;
+    const first = values[0];
+    const last  = values[values.length-1];
+    const chg   = ((last-first)/first*100);
+
+    if(emptyEl) emptyEl.style.display='none';
+    const ctx = document.getElementById('conv-fx-chart');
+    if(ctx){ ctx.style.display='';
+      CHARTS['conv-fx-chart']=new Chart(ctx,{type:'line',data:{
+        labels:dates.map(d=>{const[y,m,dd]=d.split('-');return dd+'/'+m;}),
+        datasets:[{
+          label:'1 '+from+' en '+to,
+          data:values,
+          borderColor:'#2E7D4F',
+          backgroundColor:'rgba(46,125,79,.07)',
+          fill:true, tension:.3, borderWidth:2, pointRadius:0,
+          pointHoverRadius:4, pointHoverBackgroundColor:'#2E7D4F'
+        }]
+      },options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'1 '+from+' = '+c.parsed.y.toFixed(5)+' '+to}}},
+        scales:{
+          x:{grid:{display:false},ticks:{color:'#5E7565',maxTicksLimit:8}},
+          y:{grid:{color:'#EFF6F1'},ticks:{color:'#5E7565',callback:v=>v.toFixed(4)}}
+        }
+      }});
+    }
+
+    // Stats
+    if(statsEl) statsEl.innerHTML = [
+      {label:'Taux actuel',   val:'1 '+from+' = '+last.toFixed(5)+' '+to, color:chg>=0?'var(--cd)':'var(--red)'},
+      {label:'Variation '+days+'j', val:(chg>=0?'+':'')+chg.toFixed(2)+'%', color:chg>=0?'var(--cd)':'var(--red)'},
+      {label:'Plus haut',     val:max.toFixed(5), color:'var(--cd)'},
+      {label:'Plus bas',      val:min.toFixed(5), color:'var(--red)'},
+      {label:'Moyenne',       val:avg.toFixed(5), color:'var(--muted)'},
+    ].map(s=>`<div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)">${s.label}</div>
+      <div style="font-size:15px;font-weight:700;color:${s.color};margin-top:3px">${s.val}</div>
+    </div>`).join('');
+
+  }catch(e){
+    if(emptyEl){ emptyEl.style.display='flex'; emptyEl.textContent='Impossible de charger l\'historique — verifie ta connexion'; }
+    if(statsEl) statsEl.innerHTML='';
+  }
+}
+
+
+function raceFirst(promises){
+  return new Promise((resolve,reject)=>{
+    let n=promises.length,errs=0;
+    promises.forEach(p=>{
+      Promise.resolve(p)
+        .then(r=>resolve(r))
+        .catch(e=>{
+          if(++errs===n) reject(new Error('All '+n+' sources failed'));
+        });
+    });
+  });
+}
+
+function renderTradeRows(inv){
+  if(!inv.trades||!inv.trades.length) return '';
+  const sorted=[...inv.trades].sort((a,b)=>b.date.localeCompare(a.date));
+  const avgCost=inv.avgCost||0;
+  const cur=inv.currentPrice||avgCost;
+  let html=`<tr><td colspan="11" style="padding:0">
+    <div class="trades-panel">
+      <div class="trades-panel-header">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)">${inv.ticker} — ${sorted.length} trade${sorted.length>1?'s':''}</div>
+        <div style="display:flex;gap:6px">`;
+  const realised=realisedPnl(inv);
+  if(Math.abs(realised)>0.01){
+    html+=`<div class="realised-bar"><span style="font-size:11px;color:var(--muted)">Realise:</span><span style="font-weight:700;color:${realised>=0?'var(--cd)':'var(--red)'}">${realised>=0?'+':''}${fmtM(Math.abs(realised),inv.currency)}</span></div>`;
+  }
+  html+=`<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="event.stopPropagation();openAddTradeModal('${inv.id}')">+ Trade</button>
+        </div>
+      </div>`;
+  html+=sorted.map(t=>{
+    const pnl=t.action==='buy'?(cur-t.price)*t.units:(t.price-avgCost)*t.units;
+    const pnlPct=t.price>0?((cur-t.price)/t.price*100):0;
+    return `<div class="trade-card">
+      <div class="tc-left">
+        <span class="tc-action ${t.action}">${t.action==='buy'?'BUY':'SELL'}</span>
+        <div><div class="tc-date">${fmtDate(t.date)}</div>${t.notes?`<div class="tc-note">${t.notes}</div>`:''}</div>
+      </div>
+      <div class="tc-mid">
+        <div class="tc-stat"><div class="tc-stat-lbl">Unites</div><div class="tc-stat-val">${t.units.toLocaleString('en-AU',{maximumFractionDigits:4})}</div></div>
+        <div class="tc-stat"><div class="tc-stat-lbl">Prix</div><div class="tc-stat-val">${fmtM(t.price,inv.currency)}</div></div>
+        <div class="tc-stat"><div class="tc-stat-lbl">Total</div><div class="tc-stat-val">${fmtM(t.units*t.price+(t.fees||0),inv.currency)}</div></div>
+        ${t.fees?`<div class="tc-stat"><div class="tc-stat-lbl">Frais</div><div class="tc-stat-val">${fmtM(t.fees,inv.currency)}</div></div>`:''}
+      </div>
+      ${t.action==='buy'?`<div class="tc-pnl">
+        <div class="tc-pnl-lbl">P&L latent</div>
+        <div class="tc-pnl-val" style="color:${pnl>=0?'var(--cd)':'var(--red)'}">${pnl>=0?'+':''}${fmtM(Math.abs(pnl),inv.currency)}</div>
+        <div class="tc-pnl-pct" style="color:${pnlPct>=0?'var(--cd)':'var(--red)'}">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</div>
+      </div>`:'<div class="tc-pnl"><div class="tc-pnl-lbl">Realise</div><div class="tc-pnl-val" style="color:var(--cd)">Vendu</div></div>'}
+      <div style="display:flex;flex-direction:column;justify-content:center">
+        <button class="tc-edit-btn" onclick="event.stopPropagation();openEditTradeModal('${inv.id}','${t.id}')" title="Modifier">&#9998;</button>
+        <button class="tc-del" onclick="event.stopPropagation();deleteTrade('${inv.id}','${t.id}')" title="Supprimer">&#10005;</button>
+      </div>
+    </div>`;
+  }).join('');
+  html+='</div></td></tr>';
+  return html;
 }
 
 function renderAll(){
